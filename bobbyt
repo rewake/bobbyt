@@ -1,0 +1,124 @@
+#!/bin/bash
+
+#load config file
+db_user="root";
+db_pass="";
+db_name="hfstore1";
+
+#SVNADD=true;
+
+create()
+{
+    # Format the migration file name
+    migration="$(format_filename $1).sql";
+
+    # Create the migration SQL file
+    touch $migration
+
+    # Add file to svn if requested
+#    if [ $SVNADD = true ]; then
+#        svn add $migration
+#    fi
+
+    exit;
+}
+
+# Function to push migration "UP"
+migrate()
+{
+    # Format the migration file name
+    migration="$(format_filename $1).sql";
+
+    # Source the migration SQL file
+    mysql -u $db_user -p $db_pass $db_name < $migration
+    exit;
+}
+
+# Function to push migration "DOWN"
+rollback()
+{
+    # Format the migration file name
+    migration="$(format_filename $1).down.sql";
+
+    mysql -u $db_user -p $db_pass $db_name < $migration
+    exit;
+}
+
+# Function to display help message
+usage()
+{
+cat << EOF
+
+bobbyt      A simple SQL migration manager named after
+            everyone's best friend, Mr. Bobby Tables.
+
+USAGE: $0 [command] [migration]
+
+COMMANDS:
+    create      Create the new SQL migration file(s).
+    migrate     Migrate the specified SQL migration.
+    rollback    Rollback the specified SQL migration.
+
+OPTIONS:
+   -h or -help  Show this message
+
+EOF
+}
+
+# Reformat the filename to all upper, replace dash with underscore
+format_filename()
+{
+
+    echo $1 | tr [a-z] [A-Z] | tr '-' '_';
+}
+
+# Handle commands
+if [ "$1" = "create" ]; then
+    create $2
+    exit
+fi
+
+if [ "$1" = "migrate" ]; then
+    migrate $2
+    exit
+fi
+
+if [ "$1" = "rollback" ]; then
+    rollback $2
+    exit
+fi
+
+
+# Read command flags
+while getopts "ht:r:p:v" OPTION
+do
+    case $OPTION in
+        h|help)
+            usage
+            exit 1
+            ;;
+        a)
+            SVNADD=true
+            ;;
+#        s)
+#            SERVER=$OPTARG
+#            ;;
+#        u)
+#            USER=$OPTARG
+#            ;;
+#        d)
+#            DBNAME=$OPTARG
+#            ;;
+        ?)
+            usage
+            exit
+            ;;
+    esac
+done
+
+if [[ -z $TEST ]] || [[ -z $SERVER ]] || [[ -z $PASSWD ]]
+then
+    usage
+    exit 1
+fi
+
